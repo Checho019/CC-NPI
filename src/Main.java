@@ -4,83 +4,123 @@ import java.util.HashMap;
 import java.util.Stack;
 
 public class Main {
-    // Resultado esperado = 4 5 8 4 * 2 - 10 / ^ * 7 3 1 2 / ^ * +
-    public static String operacion = "4 * 5 ^ ( ( 8 * 4 - 2 ) / 10 ) + 7 * 3 ^ ( 1 / 2 )";
-    public static String posfija = "";
-    public static Stack<String> stackOperaciones = new Stack<>();
-    public static HashMap<String, Integer> valores = new HashMap<>();
+    // expected result = 4 5 8 4 * 2 - 10 / ^ * 7 3 1 2 / ^ * +
+    public static String operation = "4 * 5 ^ ( ( 8 * 4 - 2 ) / 10 ) + 7 * 3 ^ ( 1 / 2 )";
+    public static String postfix = "";
+    public static Stack<String> generalPurposeStack = new Stack<>();
+    public static HashMap<String, Integer> values = new HashMap<>();
 
     public static void main(String[] args) {
 
-        // Llenar hashMap
-        valores.put("+", 1);
-        valores.put("-", 1);
-        valores.put("*", 2);
-        valores.put("/", 2);
-        valores.put("^", 3);
-        valores.put("(", 4);
+        // fill hashMap
+        values.put("+", 1);
+        values.put("-", 1);
+        values.put("*", 2);
+        values.put("/", 2);
+        values.put("^", 3);
+        values.put("(", 4);
 
-        Scanner entrada = new Scanner(operacion);
-        while (entrada.hasNext()) {
-            String c = entrada.next();
+        Scanner input = new Scanner(operation);
+        while (input.hasNext()) {
+            String c = input.next();
 
             try {
-                posfija += Integer.parseInt(c) + " ";
-                System.out.println("Posfija = " + posfija);
+                postfix += Integer.parseInt(c) + " ";
+                System.out.println("Postfix = " + postfix);
             } catch (Exception e) {
                 try {
-                    validarJerarquia(c);
+                    ValidateHierarchy(c);
                 } catch (Exception exc) {
-                    System.out.println("Stack = " + stackOperaciones.toString());
+                    System.out.println("Stack = " + generalPurposeStack.toString());
                 }
             }
         }
 
-        // Volcar el stack ya que son las ultimas operaciones que quedan
-        while (!stackOperaciones.isEmpty()) {
-            posfija += stackOperaciones.pop() + " ";
+        // Dump stack
+        while (!generalPurposeStack.isEmpty()) {
+            postfix += generalPurposeStack.pop() + " ";
         }
-        System.out.println("POSFIJA FINAL: " + posfija);
+        System.out.println("Postfix expression: " + postfix);
+
+        System.out.println("Result: " + solver());
+
     }
 
-    public static void validarJerarquia(String c) throws Exception {
-        // Caso de stack vacio
-        if (stackOperaciones.isEmpty()) {
-            stackOperaciones.push(c);
+    // stack handling algorithm
+    public static void ValidateHierarchy(String c) throws Exception {
+        // Case: empty Stack
+        if (generalPurposeStack.isEmpty()) {
+            generalPurposeStack.push(c);
             throw new Exception("");
         }
 
-        // Caso: Agregar parentesis de apertura al stack
+        // Case: opening parenthesis
         if (c.equals("(")) {
-            stackOperaciones.push(c);
+            generalPurposeStack.push(c);
             throw new Exception("");
         }
 
-        // caso: Parentesis de cierre entra al stack
+        // Case: closing parenthesis
         if (c.equals(")")) {
             while (true) {
-                if (stackOperaciones.peek().equals("(")) {
-                    stackOperaciones.pop();
+                if (generalPurposeStack.peek().equals("(")) {
+                    generalPurposeStack.pop();
                     throw new Exception("");
                 } else {
-                    posfija += stackOperaciones.pop() + " ";
+                    postfix += generalPurposeStack.pop() + " ";
                 }
             }
         }
 
-        // Caso: Agregar un valor comun y corriente
+        // case: add a common value
         while (true) {
-            if (stackOperaciones.isEmpty()) {
-                stackOperaciones.push(c);
+            if (generalPurposeStack.isEmpty()) {
+                generalPurposeStack.push(c);
                 throw new Exception("");
             }
-            String k = stackOperaciones.peek();
-            if (valores.get(c) <= valores.get(k) && !k.equals("(")) {
-                posfija += stackOperaciones.pop() + " ";
+            String k = generalPurposeStack.peek();
+            if (values.get(c) <= values.get(k) && !k.equals("(")) {
+                postfix += generalPurposeStack.pop() + " ";
             } else {
-                stackOperaciones.push(c);
+                generalPurposeStack.push(c);
                 throw new Exception("");
             }
         }
+    }
+
+    // Algorithm to solve the problem expressed in reverse Polish notation.
+    public static double solver(){
+        Scanner input = new Scanner(postfix);
+        while (input.hasNext()){
+            String c = input.next();
+            if (values.containsKey(c)){
+                double a = Double.parseDouble(generalPurposeStack.pop());
+                double b = Double.parseDouble(generalPurposeStack.pop());
+                double result = 0;
+
+                switch (c){
+                    case "+":
+                        result = b + a;
+                        break;
+                    case "-":
+                        result = b - a;
+                        break;
+                    case "*":
+                        result = b * a;
+                        break;
+                    case "/":
+                        result = b / a;
+                        break;
+                    case "^":
+                        result = Math.pow(b,a);
+                        break;
+                }
+
+                generalPurposeStack.push(result + "");
+            } else {
+                generalPurposeStack.push(c);
+            }
+        }
+        return Double.parseDouble(generalPurposeStack.pop());
     }
 }
